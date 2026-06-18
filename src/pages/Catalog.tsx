@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { StickerCard } from '@/components/sticker'
 import { useCollection } from '@/hooks'
 import { ALL_STICKERS, TEAM_FLAGS } from '@/data/stickers'

@@ -1,10 +1,10 @@
-import React from 'react';
-
 interface ProgressBarProps {
   progress?: number;
-  value?: number;
+  value?: number; 
   className?: string;
   colorClass?: string; 
+  size?: string;
+  color?: string;
 }
 
 export function ProgressBar({ 
