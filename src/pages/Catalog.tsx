@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
+import { Search, X, ChevronUp, ChevronDown } from 'lucide-react'
 import { StickerCard } from '@/components/sticker'
 import { useCollection } from '@/hooks'
 import { ALL_STICKERS, TEAM_FLAGS } from '@/data/stickers'
 import { GROUPS } from '@/constants/album'
 import { TeamCode } from '@/types'
-import { Search, X } from 'lucide-react'
 
 type Filter = 'all' | 'owned' | 'missing' | 'duplicates'
 
@@ -13,6 +13,17 @@ export function Catalog() {
   const [search, setSearch] = useState('')
   const [activeSection, setActiveSection] = useState('all')
   const [filter, setFilter] = useState<Filter>('all')
+
+  // Estado para controlar quais seleções estão colapsadas (fechadas)
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({})
+
+  // Função para alternar entre aberto/fechado
+  const toggleGroup = (id: string) => {
+    setCollapsedGroups((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }))
+  }
 
   // 1. Filtro base (Busca, Tenho, Faltam, Repetidas)
   const baseFilteredStickers = useMemo(() => {
@@ -25,9 +36,8 @@ export function Catalog() {
     })
   }, [search, filter, isOwned, getDuplicates])
 
-  // 2. Agrupamento em 2 níveis: Grupos -> Seleções -> Figurinhas
+  // 2. Agrupamento (Grupos -> Seleções)
   const groupedStickers = useMemo(() => {
-    // Monta a estrutura inicial vazia
     const structure = [
       {
         id: 'Especiais',
@@ -44,7 +54,7 @@ export function Catalog() {
         ]
       },
       ...GROUPS.map(g => ({
-        id: g.label, // Ex: "Grupo A"
+        id: g.label,
         label: g.label,
         subGroups: g.teams.map(teamCode => ({
           id: teamCode,
@@ -52,34 +62,34 @@ export function Catalog() {
           items: [] as typeof baseFilteredStickers
         }))
       }))
-    ];
+    ]
 
     // Distribui as figurinhas filtradas nos seus respectivos subgrupos
     baseFilteredStickers.forEach(sticker => {
       if (sticker.section === 'FWC') {
-        structure[0].subGroups[0].items.push(sticker);
+        structure[0].subGroups[0].items.push(sticker)
       } else if (sticker.section === 'CC') {
-        structure[1].subGroups[0].items.push(sticker);
+        structure[1].subGroups[0].items.push(sticker)
       } else if (sticker.teamCode) {
         // Procura o grupo que contém este time
-        const group = structure.find(g => g.subGroups.some(sg => sg.id === sticker.teamCode));
+        const group = structure.find(g => g.subGroups.some(sg => sg.id === sticker.teamCode))
         if (group) {
-          const subGroup = group.subGroups.find(sg => sg.id === sticker.teamCode);
+          const subGroup = group.subGroups.find(sg => sg.id === sticker.teamCode)
           if (subGroup) {
-            subGroup.items.push(sticker);
+            subGroup.items.push(sticker)
           }
         }
       }
-    });
+    })
 
     // 3. Aplica o filtro da seção ativa (botões superiores) e limpa o que ficou vazio
-    let result = structure;
+    let result = structure
     
     if (activeSection !== 'all') {
       result = result.map(group => ({
         ...group,
         subGroups: group.subGroups.filter(sg => sg.id === activeSection)
-      }));
+      }))
     }
 
     // Remove subgrupos vazios e, em seguida, remove grupos que ficaram vazios
@@ -92,19 +102,19 @@ export function Catalog() {
       .map(group => {
         // Garante que as figurinhas dentro do time fiquem na ordem numérica certa
         group.subGroups.forEach(sg => {
-          sg.items.sort((a, b) => a.number - b.number);
-        });
-        return group;
-      });
+          sg.items.sort((a, b) => a.number - b.number)
+        })
+        return group
+      })
 
-  }, [baseFilteredStickers, activeSection]);
+  }, [baseFilteredStickers, activeSection])
 
   // Contagem total para o rodapé do filtro
   const totalStickersCount = useMemo(() => {
     return groupedStickers.reduce((total, group) => {
-      return total + group.subGroups.reduce((subTotal, sg) => subTotal + sg.items.length, 0);
-    }, 0);
-  }, [groupedStickers]);
+      return total + group.subGroups.reduce((subTotal, sg) => subTotal + sg.items.length, 0)
+    }, 0)
+  }, [groupedStickers])
 
   const specialSections = [
     { key: 'all', label: 'Todas' },
@@ -203,26 +213,42 @@ export function Catalog() {
 
             {/* Listagem das Seleções dentro do Grupo */}
             <div className="space-y-8">
-              {group.subGroups.map(subGroup => (
-                <div key={subGroup.id} id={subGroup.id} className="scroll-mt-32">
-                  
-                  {/* Cabeçalho da Seleção (ex: 🇧🇷 BRA) */}
-                  <div className="flex items-center gap-3 mb-3">
-                    <h3 className="text-lg font-bold text-gray-700">{subGroup.label}</h3>
-                    <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-semibold rounded-full uppercase tracking-wider">
-                      {subGroup.items.length} itens
-                    </span>
-                  </div>
+              {group.subGroups.map(subGroup => {
+                const isCollapsed = collapsedGroups[subGroup.id]
 
-                  {/* Grid de Figurinhas APENAS desta Seleção */}
-                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
-                    {subGroup.items.map(sticker => (
-                      <StickerCard key={sticker.id} sticker={sticker} />
-                    ))}
+                return (
+                  <div key={subGroup.id} id={subGroup.id} className="scroll-mt-32">
+                    
+                    {/* Cabeçalho da Seleção (ex: 🇧🇷 BRA) - Clicável */}
+                    <div 
+                      className="flex items-center justify-between mb-3 cursor-pointer hover:bg-gray-50 p-2 -mx-2 rounded-lg transition-colors"
+                      onClick={() => toggleGroup(subGroup.id)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-lg font-bold text-gray-700">{subGroup.label}</h3>
+                        <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-semibold rounded-full uppercase tracking-wider">
+                          {subGroup.items.length} itens
+                        </span>
+                      </div>
+                      
+                      {/* Seta indicativa */}
+                      <div className="text-gray-400">
+                        {isCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+                      </div>
+                    </div>
+
+                    {/* Grid de Figurinhas (Oculto se a seleção estiver fechada) */}
+                    {!isCollapsed && (
+                      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                        {subGroup.items.map(sticker => (
+                          <StickerCard key={sticker.id} sticker={sticker} />
+                        ))}
+                      </div>
+                    )}
+                    
                   </div>
-                  
-                </div>
-              ))}
+                )
+              })}
             </div>
 
           </div>
