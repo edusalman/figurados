@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="https://placehold.co/60x60" alt="Figurados" />
+  <img src="public/pwa-192x192.png" alt="Figurados" />
   <br />
   Figurados
 </h1>
