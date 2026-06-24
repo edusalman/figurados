@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="figurados-app.vercel.app" target="_blank"><strong>🌐 Ver Demo ao Vivo</strong></a>
+  <a href="https://figurados-app.vercel.app" target="_blank"><strong>🌐 Ver Demo ao Vivo</strong></a>
 </p>
 
 ---
